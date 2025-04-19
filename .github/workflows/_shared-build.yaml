@@ -1,4 +1,3 @@
-
 name: Reusable build workflow
 on:
   workflow_call:
@@ -18,7 +17,7 @@ on:
         required: true
         type: boolean
       docker_repository:
-        description: 'Docker Hub Repository'
+        description: 'GitHub Container Registry Repository'
         default: ''
         required: false
         type: string
@@ -32,13 +31,6 @@ on:
         default: ''
         required: false
         type: string
-    secrets:
-      DOCKERHUB_USERNAME:
-        description: 'Docker Hub Username'
-        required: false
-      DOCKERHUB_TOKEN:
-        description: 'Docker Hub Token'
-        required: false
 
 # shared build jobs
 jobs:
@@ -114,105 +106,6 @@ jobs:
         path: ./bin/*
         name: spamoor_linux_arm64
 
-  build_windows_binary:
-    name: Build windows/amd64 binary
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        ref: ${{ inputs.ref }}
-
-    # setup global dependencies
-    - name: Set up go
-      uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
-      with:
-        go-version: 1.24.x
-
-    # setup project dependencies
-    - name: Get dependencies
-      run: |
-        go get -v -t -d ./...
-
-    # build binaries
-    - name: Build windows binary
-      run: |
-        make build
-      env:
-        RELEASE: ${{ inputs.release }}
-
-    # upload artifacts
-    - name: "Upload artifact: spamoor_windows_amd64"
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      with:
-        path: ./bin/*
-        name: spamoor_windows_amd64
-
-  build_darwin_amd64_binary:
-    name: Build macos/amd64 binary
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        ref: ${{ inputs.ref }}
-
-    # setup global dependencies
-    - name: Set up go
-      uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
-      with:
-        go-version: 1.24.x
-
-    # setup project dependencies
-    - name: Get dependencies
-      run: |
-        go get -v -t -d ./...
-
-    # build binaries
-    - name: Build macos amd64 binary
-      run: |
-        make build
-      env:
-        RELEASE: ${{ inputs.release }}
-
-    # upload artifacts
-    - name: "Upload artifact: spamoor_darwin_amd64"
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      with:
-        path: ./bin/*
-        name: spamoor_darwin_amd64
-
-  build_darwin_arm64_binary:
-    name: Build macos/arm64 binary
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        ref: ${{ inputs.ref }}
-
-    # setup global dependencies
-    - name: Set up go
-      uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
-      with:
-        go-version: 1.24.x
-
-    # setup project dependencies
-    - name: Get dependencies
-      run: |
-        go get -v -t -d ./...
-
-    # build binaries
-    - name: Build macos arm64 binary
-      run: |
-        make build GOARCH=arm64
-      env:
-        RELEASE: ${{ inputs.release }}
-
-    # upload artifacts
-    - name: "Upload artifact: spamoor_darwin_arm64"
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      with:
-        path: ./bin/*
-        name: spamoor_darwin_arm64
-
   build_amd64_docker_image:
     name: Build amd64 docker image
     needs: [build_linux_amd64_binary]
@@ -230,11 +123,12 @@ jobs:
     # prepare docker
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
-    - name: Login to Docker Hub
+    - name: Login to GitHub Container Registry
       uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     # download build artifacts
     - name: Download build artifacts
@@ -279,11 +173,12 @@ jobs:
       uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
-    - name: Login to Docker Hub
+    - name: Login to GitHub Container Registry
       uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     # download build artifacts
     - name: Download build artifacts
@@ -326,11 +221,12 @@ jobs:
     # prepare docker
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
-    - name: Login to Docker Hub
+    - name: Login to GitHub Container Registry
       uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     
     # build multiarch image
     - name: Build multiarch docker manifest
@@ -361,11 +257,12 @@ jobs:
     # prepare docker
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
-    - name: Login to Docker Hub
+    - name: Login to GitHub Container Registry
       uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     
     # build multiarch image
     - name: "Build additional docker manifest: ${{ matrix.tag }}"

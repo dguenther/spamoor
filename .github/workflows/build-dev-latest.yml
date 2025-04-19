@@ -1,8 +1,9 @@
-
 name: Build latest image
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - peerdas
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -10,6 +11,7 @@ concurrency:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
 
@@ -25,9 +27,5 @@ jobs:
       ref: ${{ github.sha }}
       release: "snapshot"
       docker: true
-      docker_repository: "ethpandaops/spamoor"
-      docker_tag_prefix: "master"
-      additional_tags: "['master','master-latest','latest']"
-    secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      docker_repository: "ghcr.io/${{ github.repository }}"
+      docker_tag_prefix: "peerdas"
